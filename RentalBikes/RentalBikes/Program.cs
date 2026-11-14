@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
- 
-namespace BikeRental
+
+namespace RentalBikes
 {
     internal class Program
     {
@@ -10,58 +10,52 @@ namespace BikeRental
         static readonly double[] ModelTariffs = { 30, 45, 60, 90, 25 };   // грн за годину
         static readonly string[] DayNames = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд" };
         static readonly int[] DayHours = { 2, 2, 3, 3, 4, 8, 9 };         // умовна кількість годин прокату за день
- 
+
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
             bool running = true;
- 
+
             while (running)
             {
-                Console.WriteLine("=== Прокат велосипедів ===");
-                Console.WriteLine("1 — довідка");
-                Console.WriteLine("2 — вартість прокату (табулювання)");
-                Console.WriteLine("3 — виручка за моделями й днями тижня");
-                Console.WriteLine("0 — вихід");
-                Console.Write("Ваш вибір: ");
+                ShowMenu();
                 string choice = Console.ReadLine();
                 Console.WriteLine();
- 
+
                 switch (choice)
                 {
-                    case "1":
-                        ShowReference();
-                        Pause();
-                        break;
-                    case "2":
-                        ShowCostTable();
-                        Pause();
-                        break;
-                    case "3":
-                        ShowRevenueTable();
-                        Pause();
-                        break;
-                    case "0":
-                        running = false;
-                        Console.WriteLine("До побачення.");
-                        break;
-                    default:
-                        Console.WriteLine("Немає такого пункту. Спробуйте ще раз.");
-                        Pause();
-                        break;
+                    case "1": ShowAbout(); Pause(); break;
+                    case "2": ShowCostTable(); Pause(); break;
+                    case "3": ShowRevenueTable(); Pause(); break;
+                    case "0": running = false; break;
+                    default: ShowUnknownChoice(); Pause(); break;
                 }
             }
+
+            Console.WriteLine("До побачення.");
         }
- 
+
+        // Виводить головне меню й запрошення до вибору
+        static void ShowMenu()
+        {
+            Console.WriteLine("=== Прокат велосипедів ===");
+            Console.WriteLine("1 — про програму");
+            Console.WriteLine("2 — вартість прокату (табулювання)");
+            Console.WriteLine("3 — виручка за моделями й днями тижня");
+            Console.WriteLine("0 — вихід");
+            Console.Write("Ваш вибір: ");
+        }
+
+        // Чекає натискання клавіші й очищає екран
         static void Pause()
         {
             Console.WriteLine("\nНатисніть будь-яку клавішу...");
             Console.ReadKey(true);
             Console.Clear();
         }
- 
-        // Довідка: тема, сутність, поля з типами
-        static void ShowReference()
+
+        // Виводить тему, сутність і перелік її полів із типами
+        static void ShowAbout()
         {
             Console.WriteLine("Тема: Прокат велосипедів.");
             Console.WriteLine("Головна сутність: Видача (8 полів):");
@@ -76,8 +70,14 @@ namespace BikeRental
             Console.WriteLine("Довідник: Модель велосипеда (код, назва, чи активний).");
             Console.WriteLine("Сутність: Користувач (з'явиться в роботі 14).");
         }
- 
-        // Табулювання: вартість прокату залежно від кількості годин
+
+        // Повідомляє, що такого пункту меню немає
+        static void ShowUnknownChoice()
+        {
+            Console.WriteLine("Немає такого пункту. Спробуйте ще раз.");
+        }
+
+        // Табулювання вартості прокату від 0,5 до 6 годин
         static void ShowCostTable()
         {
             double from = 0.5;
@@ -85,10 +85,11 @@ namespace BikeRental
             double step = 0.5;
             double tariff = 40;    // грн за годину
             double deposit = 300;  // застава, грн
- 
+
             Console.WriteLine("Вартість прокату (тариф 40 грн/год, застава 300 грн)");
             Console.WriteLine($"{"Годин",8}{"Вартість",12}{"З заставою",14}");
-            
+
+            // 1e-9 — запас, щоб остання стрічка не зникла через похибку double
             for (double h = from; h <= to + 1e-9; h += step)
             {
                 double cost = h * tariff;
@@ -96,7 +97,7 @@ namespace BikeRental
                 Console.WriteLine($"{h,8:F1}{cost,12:F2}{withDeposit,14:F2}");
             }
         }
- 
+
         // Зчитує кількість у межах 1..max; при помилці повертає 0
         static int ReadCount(string prompt, int max)
         {
@@ -110,17 +111,17 @@ namespace BikeRental
             }
             return value;
         }
- 
-        // Таблиця з двома входами: рядки — моделі, стовпці — дні тижня
+
+        // Таблиця «модель × день тижня»; розміри питає у користувача
         static void ShowRevenueTable()
         {
             int rows = ReadCount($"Скільки моделей показати (1–{ModelNames.Length}): ", ModelNames.Length);
             if (rows == 0) return;
             int cols = ReadCount($"Скільки днів показати (1–{DayNames.Length}): ", DayNames.Length);
             if (cols == 0) return;
- 
+
             Console.WriteLine("\nУмовна виручка за день, грн");
- 
+
             // Шапка — до зовнішнього циклу
             Console.Write(new string(' ', 10));
             for (int c = 0; c < cols; c++)
@@ -128,10 +129,10 @@ namespace BikeRental
                 Console.Write($"{DayNames[c],9}");
             }
             Console.WriteLine($"{"Разом",9}");
- 
+
             double[] colSums = new double[cols];
             double grandTotal = 0;
- 
+
             for (int r = 0; r < rows; r++)
             {
                 double rowSum = 0; // підсумок рядка — усередині зовнішнього циклу
@@ -146,7 +147,7 @@ namespace BikeRental
                 grandTotal += rowSum;
                 Console.WriteLine($"{rowSum,9:F0}");
             }
- 
+
             // Рядок підсумків під таблицею
             Console.Write($"{"Разом",-10}");
             for (int c = 0; c < cols; c++)
