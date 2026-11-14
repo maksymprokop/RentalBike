@@ -28,7 +28,7 @@ namespace BikeRental
                         Pause();
                         break;
                     case "2":
-                        Console.WriteLine("Цей пункт буде реалізовано пізніше.");
+                        ShowCostTable();
                         Pause();
                         break;
                     case "3":
@@ -69,6 +69,26 @@ namespace BikeRental
             Console.WriteLine("  bool     — чи повернено");
             Console.WriteLine("Довідник: Модель велосипеда (код, назва, чи активний).");
             Console.WriteLine("Сутність: Користувач (з'явиться в роботі 14).");
+        }
+ 
+        // Табулювання: вартість прокату залежно від кількості годин
+        static void ShowCostTable()
+        {
+            double from = 0.5;
+            double to = 6.0;
+            double step = 0.5;
+            double tariff = 40;    // грн за годину
+            double deposit = 300;  // застава, грн
+ 
+            Console.WriteLine("Вартість прокату (тариф 40 грн/год, застава 300 грн)");
+            Console.WriteLine($"{"Годин",8}{"Вартість",12}{"З заставою",14}");
+            
+            for (double h = from; h <= to + 1e-9; h += step)
+            {
+                double cost = h * tariff;
+                double withDeposit = cost + deposit;
+                Console.WriteLine($"{h,8:F1}{cost,12:F2}{withDeposit,14:F2}");
+            }
         }
     }
 }
