@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Globalization;
 using System.Text;
 
 namespace RentalBikes
 {
     internal class Program
     {
-        // Довідкові дані для таблиці (фіксовані масиви, колекцій немає)
+        // Довідкові дані для таблиці
         static readonly string[] ModelNames = { "Міський", "Гірський", "Шосейний", "Електро", "Дитячий" };
         static readonly double[] ModelTariffs = { 30, 45, 60, 90, 25 };   // грн за годину
         static readonly string[] DayNames = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд" };
@@ -30,7 +31,7 @@ namespace RentalBikes
                 {
                     case "1": ShowAbout(); Pause(); break;
                     case "2": RunCostTable(); Pause(); break;
-                    case "3": ShowRevenueTable(); Pause(); break;
+                    case "3": RunRevenueTable(); Pause(); break;
                     case "0": running = false; break;
                     default: ShowUnknownChoice(); Pause(); break;
                 }
@@ -74,8 +75,7 @@ namespace RentalBikes
             Console.WriteLine("Довідник: Модель велосипеда (код, назва, чи активний).");
             Console.WriteLine("Сутність: Користувач (з'явиться в роботі 14).");
         }
-
-        // Повідомляє, що такого пункту меню немає
+        
         static void ShowUnknownChoice()
         {
             Console.WriteLine("Немає такого пункту. Спробуйте ще раз.");
@@ -86,14 +86,64 @@ namespace RentalBikes
         {
             return hours * tariff;
         }
+        
+        static double ReadDouble(string prompt, double min, double max)
+        {
+            while (true)
+            {
+                Console.Write(prompt);
+                string text = Console.ReadLine() ?? "";
+                text = text.Trim().Replace(',', '.');
+                double value;
 
-        // Показує таблицю вартості для готового діапазону
+                if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value)
+                    || double.IsNaN(value))
+                {
+                    Console.WriteLine("Помилка: введіть число, наприклад 2,5.");
+                }
+                else if (value < min || value > max)
+                {
+                    Console.WriteLine($"Помилка: число має бути від {min} до {max}.");
+                }
+                else
+                {
+                    return value;
+                }
+            }
+        }
+        
+        static int ReadInt(string prompt, int min, int max)
+        {
+            while (true)
+            {
+                Console.Write(prompt);
+                string text = Console.ReadLine();
+                int value;
+
+                if (!int.TryParse(text, out value))
+                {
+                    Console.WriteLine("Помилка: введіть ціле число.");
+                }
+                else if (value < min || value > max)
+                {
+                    Console.WriteLine($"Помилка: число має бути від {min} до {max}.");
+                }
+                else
+                {
+                    return value;
+                }
+            }
+        }
+        
         static void RunCostTable()
         {
-            ShowCostTable(0.5, 6.0, 0.5);
+            double from = ReadDouble("Початок, годин (0,5–12): ", 0.5, 12);
+            double to = ReadDouble($"Кінець, годин ({from}–12): ", from, 12);
+            double step = ReadDouble("Крок, годин (0,1–12): ", 0.1, 12);
+            Console.WriteLine();
+            ShowCostTable(from, to, step);
         }
-
-        // Табулювання вартості прокату: від from до to з кроком step
+        
         static void ShowCostTable(double from, double to, double step)
         {
             if (step <= 0)
@@ -104,36 +154,29 @@ namespace RentalBikes
 
             Console.WriteLine($"Вартість прокату (тариф {Tariff} грн/год, застава {Deposit} грн)");
             Console.WriteLine($"{"Годин",8}{"Вартість",12}{"З заставою",14}");
-
-            // 1e-9 — запас, щоб остання стрічка не зникла через похибку double
+            
             for (double h = from; h <= to + 1e-9; h += step)
             {
                 double cost = CalculateCost(h, Tariff);
                 Console.WriteLine($"{h,8:F1}{cost,12:F2}{cost + Deposit,14:F2}");
             }
         }
-
-        // Зчитує кількість у межах 1..max; при помилці повертає 0
-        static int ReadCount(string prompt, int max)
+        
+        static void RunRevenueTable()
         {
-            Console.Write(prompt);
-            string text = Console.ReadLine();
-            int value;
-            if (!int.TryParse(text, out value) || value < 1 || value > max)
-            {
-                Console.WriteLine($"Помилка: потрібне ціле число від 1 до {max}.");
-                return 0;
-            }
-            return value;
+            int rows = ReadInt($"Скільки моделей показати (1–{ModelNames.Length}): ", 1, ModelNames.Length);
+            int cols = ReadInt($"Скільки днів показати (1–{DayNames.Length}): ", 1, DayNames.Length);
+            ShowRevenueTable(rows, cols);
         }
 
-        // Таблиця «модель × день тижня»; розміри питає у користувача
-        static void ShowRevenueTable()
+        // Таблиця модель 
+        static void ShowRevenueTable(int rows, int cols)
         {
-            int rows = ReadCount($"Скільки моделей показати (1–{ModelNames.Length}): ", ModelNames.Length);
-            if (rows == 0) return;
-            int cols = ReadCount($"Скільки днів показати (1–{DayNames.Length}): ", DayNames.Length);
-            if (cols == 0) return;
+            if (rows <= 0 || cols <= 0)
+            {
+                Console.WriteLine("Нема чого виводити.");
+                return;
+            }
 
             Console.WriteLine("\nУмовна виручка за день, грн");
 
