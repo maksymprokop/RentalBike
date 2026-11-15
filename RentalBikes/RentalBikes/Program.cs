@@ -11,6 +11,10 @@ namespace RentalBikes
         static readonly string[] DayNames = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд" };
         static readonly int[] DayHours = { 2, 2, 3, 3, 4, 8, 9 };         // умовна кількість годин прокату за день
 
+        // Умови для табулювання вартості
+        const double Tariff = 40;    // грн за годину
+        const double Deposit = 300;  // застава, грн
+
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
@@ -25,7 +29,7 @@ namespace RentalBikes
                 switch (choice)
                 {
                     case "1": ShowAbout(); Pause(); break;
-                    case "2": ShowCostTable(); Pause(); break;
+                    case "2": RunCostTable(); Pause(); break;
                     case "3": ShowRevenueTable(); Pause(); break;
                     case "0": running = false; break;
                     default: ShowUnknownChoice(); Pause(); break;
@@ -77,24 +81,35 @@ namespace RentalBikes
             Console.WriteLine("Немає такого пункту. Спробуйте ще раз.");
         }
 
-        // Табулювання вартості прокату від 0,5 до 6 годин
-        static void ShowCostTable()
+        // Повертає вартість прокату: кількість годин, помножена на тариф
+        static double CalculateCost(double hours, double tariff)
         {
-            double from = 0.5;
-            double to = 6.0;
-            double step = 0.5;
-            double tariff = 40;    // грн за годину
-            double deposit = 300;  // застава, грн
+            return hours * tariff;
+        }
 
-            Console.WriteLine("Вартість прокату (тариф 40 грн/год, застава 300 грн)");
+        // Показує таблицю вартості для готового діапазону
+        static void RunCostTable()
+        {
+            ShowCostTable(0.5, 6.0, 0.5);
+        }
+
+        // Табулювання вартості прокату: від from до to з кроком step
+        static void ShowCostTable(double from, double to, double step)
+        {
+            if (step <= 0)
+            {
+                Console.WriteLine("Крок має бути додатним.");
+                return;
+            }
+
+            Console.WriteLine($"Вартість прокату (тариф {Tariff} грн/год, застава {Deposit} грн)");
             Console.WriteLine($"{"Годин",8}{"Вартість",12}{"З заставою",14}");
 
             // 1e-9 — запас, щоб остання стрічка не зникла через похибку double
             for (double h = from; h <= to + 1e-9; h += step)
             {
-                double cost = h * tariff;
-                double withDeposit = cost + deposit;
-                Console.WriteLine($"{h,8:F1}{cost,12:F2}{withDeposit,14:F2}");
+                double cost = CalculateCost(h, Tariff);
+                Console.WriteLine($"{h,8:F1}{cost,12:F2}{cost + Deposit,14:F2}");
             }
         }
 
@@ -139,7 +154,7 @@ namespace RentalBikes
                 Console.Write($"{ModelNames[r],-10}");
                 for (int c = 0; c < cols; c++)
                 {
-                    double value = ModelTariffs[r] * DayHours[c];
+                    double value = CalculateCost(DayHours[c], ModelTariffs[r]);
                     rowSum += value;
                     colSums[c] += value;
                     Console.Write($"{value,9:F0}");
