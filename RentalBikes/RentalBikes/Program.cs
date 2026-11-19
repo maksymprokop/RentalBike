@@ -46,6 +46,24 @@ namespace RentalBikes
                             break;
                         }
                     case "5": ShowValues(values, count); Pause(); break;
+                    case "6":
+                        {
+                            if (count == 0)
+                            {
+                                Console.WriteLine("Масив порожній: статистики немає.");
+                            }
+                            else
+                            {
+                                Statistics(values, count, out double sum, out double average);
+                                FindMax(values, count, out double max, out int maxIndex);
+                                Console.WriteLine($"Елементів: {count}");
+                                Console.WriteLine($"Сума: {sum:F2}");
+                                Console.WriteLine($"Середнє: {average:F2}");
+                                Console.WriteLine($"Найбільше: {max:F2} (номер {maxIndex + 1})");
+                            }
+                            Pause();
+                            break;
+                        }
                     case "0": running = false; break;
                     default: ShowUnknownChoice(); Pause(); break;
                 }
@@ -63,6 +81,7 @@ namespace RentalBikes
             Console.WriteLine("3 — виручка за моделями й днями тижня");
             Console.WriteLine("4 — додати значення");
             Console.WriteLine("5 — показати значення");
+            Console.WriteLine("6 — статистика (сума, середнє, найбільше)");
             Console.WriteLine("0 — вихід");
             Console.Write("Ваш вибір: ");
         }
@@ -192,7 +211,7 @@ namespace RentalBikes
             ShowRevenueTable(rows, cols);
         }
 
-        // Таблиця «модель × день тижня»: rows моделей, cols днів, із підсумками
+        // Таблиця «модель + день тижня»: rows моделей, cols днів, із підсумками
         static void ShowRevenueTable(int rows, int cols)
         {
             if (rows <= 0 || cols <= 0)
@@ -265,6 +284,40 @@ namespace RentalBikes
             {
                 Console.WriteLine($"{i + 1,4}{values[i],14:F2}");
             }
+        }
+
+        // Знаходить найбільше значення та його індекс; викликати тільки для count > 0
+        static void FindMax(double[] values, int count, out double max, out int maxIndex)
+        {
+            max = 0;
+            maxIndex = -1;
+            if (count == 0)
+            {
+                return;
+            }
+
+            max = values[0];
+            maxIndex = 0;
+            for (int i = 1; i < count; i++)
+            {
+                if (values[i] > max)
+                {
+                    max = values[i];
+                    maxIndex = i;
+                }
+            }
+        }
+
+        // Рахує суму та середнє; для порожнього набору середнє дорівнює нулю
+        static void Statistics(double[] values, int count, out double sum, out double average)
+        {
+            sum = 0;
+            for (int i = 0; i < count; i++)
+            {
+                sum += values[i];
+            }
+
+            average = count > 0 ? sum / count : 0;
         }
     }
 }
