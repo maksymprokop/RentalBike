@@ -6,12 +6,6 @@ namespace RentalBikes
 {
     internal class Program
     {
-        // Довідкові дані для таблиці (фіксовані масиви, колекцій немає)
-        static readonly string[] ModelNames = { "Міський", "Гірський", "Шосейний", "Електро", "Дитячий" };
-        static readonly double[] ModelTariffs = { 30, 45, 60, 90, 25 };   // грн за годину
-        static readonly string[] DayNames = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд" };
-        static readonly int[] DayHours = { 2, 2, 3, 3, 4, 8, 9 };         // умовна кількість годин прокату за день
-
         // Умови для табулювання вартості
         const double Tariff = 40;    // грн за годину
         const double Deposit = 300;  // застава, грн
@@ -19,6 +13,12 @@ namespace RentalBikes
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
+
+            // Довідкові дані для таблиці виручки
+            string[] modelNames = { "Міський", "Гірський", "Шосейний", "Електро", "Дитячий" };
+            double[] modelTariffs = { 30, 45, 60, 90, 25 };   // грн за годину
+            string[] dayNames = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд" };
+            int[] dayHours = { 2, 2, 3, 3, 4, 8, 9 };         // умовна кількість годин прокату за день
 
             // Робочий масив значень і лічильник заповнених елементів
             double[] values = new double[100];
@@ -34,8 +34,24 @@ namespace RentalBikes
                 switch (choice)
                 {
                     case "1": ShowAbout(); Pause(); break;
-                    case "2": RunCostTable(); Pause(); break;
-                    case "3": RunRevenueTable(); Pause(); break;
+                    case "2":
+                        {
+                            double from = ReadDouble("Початок, годин (0,5–12): ", 0.5, 12);
+                            double to = ReadDouble($"Кінець, годин ({from}–12): ", from, 12);
+                            double step = ReadDouble("Крок, годин (0,1–12): ", 0.1, 12);
+                            Console.WriteLine();
+                            ShowCostTable(from, to, step);
+                            Pause();
+                            break;
+                        }
+                    case "3":
+                        {
+                            int rows = ReadInt($"Скільки моделей показати (1–{modelNames.Length}): ", 1, modelNames.Length);
+                            int cols = ReadInt($"Скільки днів показати (1–{dayNames.Length}): ", 1, dayNames.Length);
+                            ShowRevenueTable(modelNames, modelTariffs, dayNames, dayHours, rows, cols);
+                            Pause();
+                            break;
+                        }
                     case "4":
                         {
                             double newValue = ReadDouble("Нове значення (від -1000000 до 1000000): ", -1000000, 1000000);
@@ -64,6 +80,16 @@ namespace RentalBikes
                             Pause();
                             break;
                         }
+                    case "7":
+                        {
+                            int number = ReadInt("Номер елемента для видалення (з таблиці): ", -1000000, 1000000);
+                            int before = count;
+                            RemoveAt(values, ref count, number - 1);
+                            Console.WriteLine($"Лічильник у Main: було {before}, стало {count}.");
+                            Pause();
+                            break;
+                        }
+                    case "8": ShowPassingDemo(); Pause(); break;
                     case "0": running = false; break;
                     default: ShowUnknownChoice(); Pause(); break;
                 }
@@ -82,6 +108,8 @@ namespace RentalBikes
             Console.WriteLine("4 — додати значення");
             Console.WriteLine("5 — показати значення");
             Console.WriteLine("6 — статистика (сума, середнє, найбільше)");
+            Console.WriteLine("7 — видалити значення за номером");
+            Console.WriteLine("8 — дослід: значення і посилання");
             Console.WriteLine("0 — вихід");
             Console.Write("Ваш вибір: ");
         }
@@ -173,16 +201,6 @@ namespace RentalBikes
             }
         }
 
-        // Початок, кінець і крок та показує таблицю вартості
-        static void RunCostTable()
-        {
-            double from = ReadDouble("Початок, годин (0,5–12): ", 0.5, 12);
-            double to = ReadDouble($"Кінець, годин ({from}–12): ", from, 12);
-            double step = ReadDouble("Крок, годин (0,1–12): ", 0.1, 12);
-            Console.WriteLine();
-            ShowCostTable(from, to, step);
-        }
-
         // Табулювання вартості прокату: від from до to з кроком step
         static void ShowCostTable(double from, double to, double step)
         {
@@ -203,16 +221,8 @@ namespace RentalBikes
             }
         }
 
-        // Розміри таблиці та показує виручку
-        static void RunRevenueTable()
-        {
-            int rows = ReadInt($"Скільки моделей показати (1–{ModelNames.Length}): ", 1, ModelNames.Length);
-            int cols = ReadInt($"Скільки днів показати (1–{DayNames.Length}): ", 1, DayNames.Length);
-            ShowRevenueTable(rows, cols);
-        }
-
-        // Таблиця «модель + день тижня»: rows моделей, cols днів, із підсумками
-        static void ShowRevenueTable(int rows, int cols)
+        // Таблиця модель + день тижня: rows моделей, cols днів, із підсумками
+        static void ShowRevenueTable(string[] modelNames, double[] tariffs, string[] dayNames, int[] dayHours, int rows, int cols)
         {
             if (rows <= 0 || cols <= 0)
             {
@@ -226,7 +236,7 @@ namespace RentalBikes
             Console.Write(new string(' ', 10));
             for (int c = 0; c < cols; c++)
             {
-                Console.Write($"{DayNames[c],9}");
+                Console.Write($"{dayNames[c],9}");
             }
             Console.WriteLine($"{"Разом",9}");
 
@@ -236,10 +246,10 @@ namespace RentalBikes
             for (int r = 0; r < rows; r++)
             {
                 double rowSum = 0; // підсумок рядка — усередині зовнішнього циклу
-                Console.Write($"{ModelNames[r],-10}");
+                Console.Write($"{modelNames[r],-10}");
                 for (int c = 0; c < cols; c++)
                 {
-                    double value = CalculateCost(DayHours[c], ModelTariffs[r]);
+                    double value = CalculateCost(dayHours[c], tariffs[r]);
                     rowSum += value;
                     colSums[c] += value;
                     Console.Write($"{value,9:F0}");
@@ -318,6 +328,54 @@ namespace RentalBikes
             }
 
             average = count > 0 ? sum / count : 0;
+        }
+
+        // Видаляє елемент із номером index (з нуля), зсуває решту вліво й зменшує лічильник
+        static void RemoveAt(double[] values, ref int count, int index)
+        {
+            if (index < 0 || index >= count)
+            {
+                Console.WriteLine("Немає елемента з таким номером. Нічого не змінено.");
+                return;
+            }
+
+            for (int i = index; i < count - 1; i++)
+            {
+                values[i] = values[i + 1];
+            }
+
+            count--;
+            values[count] = 0;
+        }
+
+        // Намагається змінити int без ref: змінюється лише копія параметра
+        static void TryChangeNumber(int number)
+        {
+            number = number + 100;
+            Console.WriteLine($"  Усередині методу number = {number}");
+        }
+
+        // Змінює елемент масиву: масив передається посиланням, тому зміна видна ззовні
+        static void ChangeFirstElement(double[] numbers)
+        {
+            numbers[0] = numbers[0] + 100;
+            Console.WriteLine($"  Усередині методу numbers[0] = {numbers[0]}");
+        }
+
+        // Показує різницю між значимим і посилальним типом
+        static void ShowPassingDemo()
+        {
+            int price = 50;
+            double[] prices = { 50, 70, 90 };
+
+            Console.WriteLine($"int price = {price}");
+            TryChangeNumber(price);
+            Console.WriteLine($"Після TryChangeNumber(price): price = {price}. Оригінал не змінився: метод змінив копію.");
+            Console.WriteLine();
+
+            Console.WriteLine($"double[] prices = {{ 50, 70, 90 }}, prices[0] = {prices[0]}");
+            ChangeFirstElement(prices);
+            Console.WriteLine($"Після ChangeFirstElement(prices): prices[0] = {prices[0]}. Зміна видна: масив передається посиланням.");
         }
     }
 }
