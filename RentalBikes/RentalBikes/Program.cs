@@ -6,7 +6,7 @@ namespace RentalBikes
 {
     internal class Program
     {
-        // Довідкові дані для таблиці
+        // Довідкові дані для таблиці (фіксовані масиви, колекцій немає)
         static readonly string[] ModelNames = { "Міський", "Гірський", "Шосейний", "Електро", "Дитячий" };
         static readonly double[] ModelTariffs = { 30, 45, 60, 90, 25 };   // грн за годину
         static readonly string[] DayNames = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд" };
@@ -19,6 +19,10 @@ namespace RentalBikes
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
+
+            // Робочий масив значень і лічильник заповнених елементів
+            double[] values = new double[100];
+            int count = 0;
             bool running = true;
 
             while (running)
@@ -32,6 +36,16 @@ namespace RentalBikes
                     case "1": ShowAbout(); Pause(); break;
                     case "2": RunCostTable(); Pause(); break;
                     case "3": RunRevenueTable(); Pause(); break;
+                    case "4":
+                        {
+                            double newValue = ReadDouble("Нове значення (від -1000000 до 1000000): ", -1000000, 1000000);
+                            int before = count;
+                            AddValue(values, ref count, newValue, values.Length);
+                            Console.WriteLine($"Лічильник у Main: було {before}, стало {count}.");
+                            Pause();
+                            break;
+                        }
+                    case "5": ShowValues(values, count); Pause(); break;
                     case "0": running = false; break;
                     default: ShowUnknownChoice(); Pause(); break;
                 }
@@ -47,6 +61,8 @@ namespace RentalBikes
             Console.WriteLine("1 — про програму");
             Console.WriteLine("2 — вартість прокату (табулювання)");
             Console.WriteLine("3 — виручка за моделями й днями тижня");
+            Console.WriteLine("4 — додати значення");
+            Console.WriteLine("5 — показати значення");
             Console.WriteLine("0 — вихід");
             Console.Write("Ваш вибір: ");
         }
@@ -75,7 +91,8 @@ namespace RentalBikes
             Console.WriteLine("Довідник: Модель велосипеда (код, назва, чи активний).");
             Console.WriteLine("Сутність: Користувач (з'явиться в роботі 14).");
         }
-        
+
+        // Повідомляє, що такого пункту меню немає
         static void ShowUnknownChoice()
         {
             Console.WriteLine("Немає такого пункту. Спробуйте ще раз.");
@@ -86,7 +103,8 @@ namespace RentalBikes
         {
             return hours * tariff;
         }
-        
+
+        // Дійсне число в межах [min; max] і повторює запит, доки не отримає прийнятне
         static double ReadDouble(string prompt, double min, double max)
         {
             while (true)
@@ -111,7 +129,8 @@ namespace RentalBikes
                 }
             }
         }
-        
+
+        // Ціле число в межах [min; max] і повторює запит, доки не отримає прийнятне
         static int ReadInt(string prompt, int min, int max)
         {
             while (true)
@@ -134,7 +153,8 @@ namespace RentalBikes
                 }
             }
         }
-        
+
+        // Початок, кінець і крок та показує таблицю вартості
         static void RunCostTable()
         {
             double from = ReadDouble("Початок, годин (0,5–12): ", 0.5, 12);
@@ -143,7 +163,8 @@ namespace RentalBikes
             Console.WriteLine();
             ShowCostTable(from, to, step);
         }
-        
+
+        // Табулювання вартості прокату: від from до to з кроком step
         static void ShowCostTable(double from, double to, double step)
         {
             if (step <= 0)
@@ -154,14 +175,16 @@ namespace RentalBikes
 
             Console.WriteLine($"Вартість прокату (тариф {Tariff} грн/год, застава {Deposit} грн)");
             Console.WriteLine($"{"Годин",8}{"Вартість",12}{"З заставою",14}");
-            
+
+            // 1e-9 — запас, щоб остання стрічка не зникла через похибку double
             for (double h = from; h <= to + 1e-9; h += step)
             {
                 double cost = CalculateCost(h, Tariff);
                 Console.WriteLine($"{h,8:F1}{cost,12:F2}{cost + Deposit,14:F2}");
             }
         }
-        
+
+        // Розміри таблиці та показує виручку
         static void RunRevenueTable()
         {
             int rows = ReadInt($"Скільки моделей показати (1–{ModelNames.Length}): ", 1, ModelNames.Length);
@@ -169,7 +192,7 @@ namespace RentalBikes
             ShowRevenueTable(rows, cols);
         }
 
-        // Таблиця модель 
+        // Таблиця «модель × день тижня»: rows моделей, cols днів, із підсумками
         static void ShowRevenueTable(int rows, int cols)
         {
             if (rows <= 0 || cols <= 0)
@@ -213,6 +236,35 @@ namespace RentalBikes
                 Console.Write($"{colSums[c],9:F0}");
             }
             Console.WriteLine($"{grandTotal,9:F0}");
+        }
+
+        // Додає значення в кінець масиву; лічильник змінюється, тому передається через ref
+        static void AddValue(double[] values, ref int count, double newValue, int capacity)
+        {
+            if (count == capacity)
+            {
+                Console.WriteLine("Місця більше немає.");
+                return;
+            }
+
+            values[count] = newValue;
+            count++;
+        }
+
+        // Виводить перші count елементів масиву таблицею з номерами; нічого не питає
+        static void ShowValues(double[] values, int count)
+        {
+            if (count == 0)
+            {
+                Console.WriteLine("Масив порожній.");
+                return;
+            }
+
+            Console.WriteLine($"{"№",4}{"Значення",14}");
+            for (int i = 0; i < count; i++)
+            {
+                Console.WriteLine($"{i + 1,4}{values[i],14:F2}");
+            }
         }
     }
 }
